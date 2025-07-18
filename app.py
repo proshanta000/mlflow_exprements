@@ -12,6 +12,12 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import ElasticNet
 from urllib.parse import urlparse
+
+# Import dagshub and initialize it BEFORE mlflow calls
+import dagshub
+dagshub.init(repo_owner='proshanta000', repo_name='mlflow_exprements', mlflow=True)
+
+
 import mlflow
 from mlflow.models import infer_signature
 import mlflow.sklearn
@@ -56,6 +62,7 @@ if __name__ == "__main__":
     alpha = float(sys.argv[1]) if len(sys.argv) > 1 else 0.5
     l1_ratio = float(sys.argv[2]) if len(sys.argv) > 2 else 0.5
 
+    # This is your main MLflow run block
     with mlflow.start_run():
         lr = ElasticNet(alpha=alpha, l1_ratio=l1_ratio, random_state=42)
         lr.fit(train_x, train_y)
@@ -65,9 +72,9 @@ if __name__ == "__main__":
         (rmse, mae, r2) = eval_metrics(test_y, predicted_qualities)
 
         print("Elasticnet model (alpha={:f}, l1_ratio={:f}):".format(alpha, l1_ratio))
-        print("  RMSE: %s" % rmse)
-        print("  MAE: %s" % mae)
-        print("  R2: %s" % r2)
+        print("   RMSE: %s" % rmse)
+        print("   MAE: %s" % mae)
+        print("   R2: %s" % r2)
 
         mlflow.log_param("alpha", alpha)
         mlflow.log_param("l1_ratio", l1_ratio)
@@ -75,13 +82,16 @@ if __name__ == "__main__":
         mlflow.log_metric("r2", r2)
         mlflow.log_metric("mae", mae)
 
-        predictions = lr.predict(train_x)
-        signature = infer_signature(train_x, predictions)
+        # The following lines are commented out in your original code,
+        # but if you uncomment them, they would also be inside this run.
+        # predictions = lr.predict(train_x)
+        # signature = infer_signature(train_x, predictions)
 
         ## For Remote server only(DAGShub)
-
-        '''remote_server_uri="https://dagshub.com/krishnaik06/mlflowexperiments.mlflow"
-        mlflow.set_tracking_uri(remote_server_uri)'''
+        # Note: dagshub.init(mlflow=True) already sets the tracking URI,
+        # so this line might be redundant but won't hurt.
+        remote_server_uri="https://dagshub.com/proshanta000/mlflow_exprements.mlflow"
+        mlflow.set_tracking_uri(remote_server_uri)
 
         tracking_url_type_store = urlparse(mlflow.get_tracking_uri()).scheme
 
@@ -92,7 +102,8 @@ if __name__ == "__main__":
             # please refer to the doc for more information:
             # https://mlflow.org/docs/latest/model-registry.html#api-workflow
             mlflow.sklearn.log_model(
-                lr, "model", registered_model_name="ElasticnetWineModel", signature=signature
+                lr, "model", registered_model_name="ElasticnetWineModel"
             )
         else:
-            mlflow.sklearn.log_model(lr, "model", signature=signature)
+            mlflow.sklearn.log_model(lr, "model")
+
