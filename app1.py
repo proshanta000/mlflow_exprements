@@ -66,15 +66,18 @@ if __name__ == "__main__":
     alpha = float(sys.argv[1]) if len(sys.argv) > 1 else 0.5
     l1_ratio = float(sys.argv[2]) if len(sys.argv) > 2 else 0.5
 
+    lr = ElasticNet(alpha=alpha, l1_ratio=l1_ratio, random_state=42)
+    lr.fit(train_x, train_y)
+
+    predicted_qualities = lr.predict(test_x)
+
+    (rmse, mae, r2) = eval_metrics(test_y, predicted_qualities)
+
+    mlflow.set_experiment("winequality-red")
+
     # This is your main MLflow run block
     with mlflow.start_run():
-        lr = ElasticNet(alpha=alpha, l1_ratio=l1_ratio, random_state=42)
-        lr.fit(train_x, train_y)
-
-        predicted_qualities = lr.predict(test_x)
-
-        (rmse, mae, r2) = eval_metrics(test_y, predicted_qualities)
-
+   
         print("Elasticnet model (alpha={:f}, l1_ratio={:f}):".format(alpha, l1_ratio))
         print("   RMSE: %s" % rmse)
         print("   MAE: %s" % mae)
@@ -85,6 +88,12 @@ if __name__ == "__main__":
         mlflow.log_metric("rmse", rmse)
         mlflow.log_metric("r2", r2)
         mlflow.log_metric("mae", mae)
+
+        # Set a tag that we can use to remind ourselves what this run was for
+        mlflow.set_tag("Training Info", "Basic LR model winequality-red")
+
+         # Infer the model signature
+        signature = infer_signature(train_x, lr.predict(train_x))
 
         # --- Start of new, reliable model logging method ---
         # Create a temporary directory to save the model
