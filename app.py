@@ -8,12 +8,9 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
-
-
 # Import dagshub and initialize it BEFORE mlflow calls
 import dagshub
 dagshub.init(repo_owner='proshanta000', repo_name='mlflow_exprements', mlflow=True)
-
 
 import mlflow
 from mlflow.models import infer_signature
@@ -21,12 +18,10 @@ import mlflow.sklearn
 
 import logging
 
-
 mlflow.set_tracking_uri("https://dagshub.com/proshanta000/mlflow_exprements.mlflow")
 
 logging.basicConfig(level=logging.WARN)
 logger = logging.getLogger(__name__)
-
 
 # Load the Iris dataset
 X, y = datasets.load_iris(return_X_y=True)
@@ -50,23 +45,22 @@ accuracy = accuracy_score(y_test, y_pred)
 mlflow.set_experiment("MLflow Quickstart")
 # Start an MLflow run
 with mlflow.start_run():
-  # Log the hyperparameters
-  mlflow.log_params(params)
+    # Log the hyperparameters
+    mlflow.log_params(params)
 
-  # Log the loss metric
-  mlflow.log_metric("accuracy", accuracy)
+    # Log the loss metric
+    mlflow.log_metric("accuracy", accuracy)
 
-  # Set a tag that we can use to remind ourselves what this run was for
-  mlflow.set_tag("Training Info", "Basic LR model for iris data")
+    # Set a tag that we can use to remind ourselves what this run was for
+    mlflow.set_tag("Training Info", "Basic LR model for iris data")
 
-  # Infer the model signature
-  signature = infer_signature(X_train, lr.predict(X_train))
+    # Infer the model signature
+    signature = infer_signature(X_train, lr.predict(X_train))
 
-  # Log the model
-  model_info = mlflow.sklearn.log_model(
-      sk_model=lr,
-      name="iris_model",
-      signature=signature,
-      input_example=X_train,
-      registered_model_name="tracking-quickstart",
-  )
+    # Log the model as a regular artifact. Model registry is not supported.
+    model_info = mlflow.sklearn.log_model(
+        sk_model=lr,
+        artifact_path="iris_model",
+        signature=signature,
+        input_example=X_train,
+    )
