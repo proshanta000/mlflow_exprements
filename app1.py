@@ -5,6 +5,8 @@
 import os
 import warnings
 import sys
+import tempfile
+import shutil
 
 import pandas as pd
 import numpy as np
@@ -16,14 +18,15 @@ from urllib.parse import urlparse
 # Import dagshub and initialize it BEFORE mlflow calls
 import dagshub
 dagshub.init(repo_owner='proshanta000', repo_name='mlflow_exprements', mlflow=True)
-mlflow.set_tracking_uri("https://dagshub.com/proshanta000/mlflow_exprements.mlflow")
-
 
 import mlflow
 from mlflow.models import infer_signature
 import mlflow.sklearn
 
 import logging
+
+mlflow.set_tracking_uri("https://dagshub.com/proshanta000/mlflow_exprements.mlflow")
+
 
 logging.basicConfig(level=logging.WARN)
 logger = logging.getLogger(__name__)
@@ -83,27 +86,16 @@ if __name__ == "__main__":
         mlflow.log_metric("r2", r2)
         mlflow.log_metric("mae", mae)
 
-        # The following lines are commented out in your original code,
-        # but if you uncomment them, they would also be inside this run.
-        # predictions = lr.predict(train_x)
-        # signature = infer_signature(train_x, predictions)
-
-        ## For Remote server only(DAGShub)
-        # Note: dagshub.init(mlflow=True) already sets the tracking URI,
-        # so this line might be redundant but won't hurt.
-        
-
-        tracking_url_type_store = urlparse(mlflow.get_tracking_uri()).scheme
-
-        # Model registry does not work with file store
-        if tracking_url_type_store != "file":
-            # Register the model
-            # There are other ways to use the Model Registry, which depends on the use case,
-            # please refer to the doc for more information:
-            # https://mlflow.org/docs/latest/model-registry.html#api-workflow
-            mlflow.sklearn.log_model(
-                lr, "model", registered_model_name="ElasticnetWineModel"
+        # --- Start of new, reliable model logging method ---
+        # Create a temporary directory to save the model
+        with tempfile.TemporaryDirectory() as temp_dir:
+            model_path = temp_dir + "/wine_model"
+            mlflow.sklearn.save_model(
+                sk_model=lr,
+                path=model_path,
+                # Note: signature and input_example are optional but good practice
+                signature=infer_signature(train_x, lr.predict(train_x)), 
+                input_example=train_x
             )
-        else:
-            mlflow.sklearn.log_model(lr, "model")
-
+            mlflow.log_artifacts(model_path, "wine_model")
+        # --- End of new model logging method ---
