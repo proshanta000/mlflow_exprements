@@ -7,6 +7,8 @@ from sklearn import datasets
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
+import tempfile
+import shutil
 
 # Import dagshub and initialize it BEFORE mlflow calls
 import dagshub
@@ -57,10 +59,18 @@ with mlflow.start_run():
     # Infer the model signature
     signature = infer_signature(X_train, lr.predict(X_train))
 
-    # Log the model as a regular artifact. Model registry is not supported.
-    model_info = mlflow.sklearn.log_model(
-        sk_model=lr,
-        name="iris_model",
-        signature=signature,
-        input_example=X_train,
-    )
+    # --- Start of new, reliable model logging method ---
+    # Create a temporary directory to save the model
+    with tempfile.TemporaryDirectory() as temp_dir:
+        model_path = temp_dir + "/iris_model"
+        mlflow.sklearn.save_model(
+            sk_model=lr,
+            path=model_path,
+            signature=signature,
+            input_example=X_train
+        )
+        mlflow.log_artifacts(model_path, "iris_model")
+    # --- End of new model logging method ---
+    
+    # This print statement is for confirmation, it will not log to the server
+    print("Model logged as artifact to the 'iris_model' folder.")
