@@ -13,7 +13,6 @@ from sklearn.model_selection import train_test_split
 # Import dagshub and initialize it BEFORE mlflow calls
 import dagshub
 dagshub.init(repo_owner='proshanta000', repo_name='mlflow_exprements', mlflow=True)
-mlflow.set_tracking_uri("https://dagshub.com/proshanta000/mlflow_exprements.mlflow")
 
 
 import mlflow
@@ -21,6 +20,9 @@ from mlflow.models import infer_signature
 import mlflow.sklearn
 
 import logging
+
+
+mlflow.set_tracking_uri("https://dagshub.com/proshanta000/mlflow_exprements.mlflow")
 
 logging.basicConfig(level=logging.WARN)
 logger = logging.getLogger(__name__)
