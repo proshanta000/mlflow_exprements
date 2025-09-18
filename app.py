@@ -60,7 +60,7 @@ with mlflow.start_run():
     # Log the model as a regular artifact. Model registry is not supported.
     model_info = mlflow.sklearn.log_model(
         sk_model=lr,
-        artifact_path="iris_model",
+        name="iris_model",
         signature=signature,
         input_example=X_train,
     )
