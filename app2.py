@@ -3,8 +3,19 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 
+
+# Import dagshub and initialize it BEFORE mlflow calls
+import dagshub
+dagshub.init(repo_owner='proshanta000', repo_name='mlflow_exprements', mlflow=True)
+
 import mlflow
+from mlflow.models import infer_signature
 import mlflow.sklearn
+
+import logging
+
+mlflow.set_tracking_uri("https://dagshub.com/proshanta000/mlflow_exprements.mlflow")
+
 
 with mlflow.start_run() as run:
     X, y = make_regression(n_features=4, n_informative=2, random_state=0, shuffle=False)
